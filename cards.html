@@ -41,6 +41,32 @@
 		<script src="libs/stats.min.js"></script> -->
 
 		<script>
+		function create_particle(){
+
+			geometry = new THREE.PlaneGeometry(100,100)
+			var n = new THREE.Mesh(geometry, material)
+
+
+			n.velocity = new THREE.Vector3
+
+			n.offset = new THREE.Vector3
+			n.offset.x = Math.random()*200 - 100
+			n.offset.y = Math.random()*200 - 100
+			n.offset.z = Math.random()*200
+
+			var max_rota_multi = 0.1
+			n.rotation_velocity = new THREE.Vector3
+			n.rotation_velocity.x = max_rota_multi*(Math.random()*2-1)
+			n.rotation_velocity.y = max_rota_multi*(Math.random()*2-1)
+			n.rotation_velocity.z = max_rota_multi*(Math.random()*2-1)
+
+			console.log(n.position)
+
+			return n
+		}
+		</script>
+
+		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
@@ -53,6 +79,7 @@
 
 
 			var evidentTexture, material, evidentmesh, evidentmeshclone
+			particles = []
 
 			init();
 			animate();
@@ -68,8 +95,7 @@
 				scene = new THREE.Scene();
 				scene.fog = new THREE.FogExp2( 0x000000, 0.0008 );
 
-				geometry = new THREE.Geometry();
-
+				// geometry = new THREE.Geometry();
 
 				renderer = new THREE.WebGLRenderer( { clearAlpha: 1, antialias: true  } );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -84,17 +110,26 @@
 						transparent: true,
 						side: THREE.DoubleSide,
 						alphaTest: 0.2,
-						opacity: 0.3
+						opacity: 0.8
 					}
 				);
 
-				geometry = new THREE.PlaneGeometry(100,100)
+				// geometry = new THREE.PlaneGeometry(100,100)
+				//
+				// evidentmesh = new THREE.Mesh( geometry, material )
+				//
+				// evidentmesh.velocity = new THREE.Vector3
+				//
+				// evidentmeshclone = new THREE.Mesh( geometry, material )
 
-				evidentmesh = new THREE.Mesh( geometry, material )
-				evidentmeshclone = new THREE.Mesh( geometry, material )
+				for(var i = 0; i < 100; i++){
+					var n = create_particle()
+					scene.add(n)
+					particles.push(n)
+				}
 
-				scene.add(evidentmeshclone)
-				scene.add(evidentmesh)
+				// scene.add(evidentmeshclone)
+				// scene.add(evidentmesh)
 
 
 				// stats = new Stats();
@@ -111,6 +146,70 @@
 				window.addEventListener( 'resize', onWindowResize, false );
 
 			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				// stats.update();
+
+			}
+
+			function render() {
+
+				var time = Date.now() * 0.00005;
+
+				// console.log(mouseX)
+
+				camera.position.x += ( mouseX - camera.position.x ) * 0.05;
+				camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+
+				camera.lookAt( scene.position );
+
+				particles.forEach(function(particle){
+
+					particle.rotation.x += particle.rotation_velocity.x
+					particle.rotation.y += particle.rotation_velocity.y
+
+					var rotation_radius = 100
+					var time_multi = 10
+
+					particle.velocity.z -= 2.0 *  Math.random()
+					particle.position.x = particle.offset.x + rotation_radius * Math.cos(time*time_multi)
+					particle.position.y = particle.offset.y + rotation_radius * Math.sin(time*time_multi)
+					particle.position.z += particle.velocity.z
+
+					if(particle.position.z < -1000){ particle.position.z = particle.offset.z; particle.velocity.z = 0}
+
+				})
+				//
+				//
+				// evidentmesh.rotation.x += 0.03
+				// evidentmesh.rotation.y += 0.06
+				//
+				// evidentmesh.velocity.z -= 0.1
+				//
+				// var time = Date.now() * 0.001
+				// evidentmesh.position.x = 60.0 * Math.cos(time)
+				// evidentmesh.position.y = 60.0 * Math.sin(time)
+				// evidentmesh.position.z += evidentmesh.velocity.z
+				//
+				// evidentmeshclone.rotation.x -= 0.01
+				// evidentmeshclone.rotation.y -= 0.1
+				//
+				// evidentmeshclone.scale.x = Math.cos(Date.now()*0.000005)
+				// evidentmeshclone.scale.y = Math.sin(Date.now()*0.000001+1)
+
+				//evidentmeshclone.scale.x = 2.5
+
+				renderer.render( scene, camera );
+
+			}
+
+
 
 			function onWindowResize() {
 
@@ -157,42 +256,6 @@
 
 			}
 
-			//
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				render();
-				// stats.update();
-
-			}
-
-			function render() {
-
-				var time = Date.now() * 0.00005;
-
-				// console.log(mouseX)
-
-				// camera.position.x += ( mouseX - camera.position.x ) * 0.05;
-				// camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
-
-				camera.lookAt( scene.position );
-
-				evidentmesh.rotation.x += 0.01
-				evidentmesh.rotation.y += 0.03
-
-				evidentmeshclone.rotation.x -= 0.01
-				evidentmeshclone.rotation.y -= 0.03
-
-				evidentmeshclone.scale.x = Math.cos(Date.now()*0.000005)
-				evidentmeshclone.scale.y = Math.sin(Date.now()*0.000001)
-
-				//evidentmeshclone.scale.x = 2.5
-
-				renderer.render( scene, camera );
-
-			}
 
 
 		</script>
