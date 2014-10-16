@@ -32,8 +32,6 @@
 	</head>
 	<body>
 
-
-
 		<script src="three.js"></script>
 
 		<script src="Detector.js"></script>
@@ -52,7 +50,9 @@
 			n.offset = new THREE.Vector3
 			n.offset.x = Math.random()*200 - 100
 			n.offset.y = Math.random()*200 - 100
-			n.offset.z = Math.random()*200
+			n.offset.z = Math.random()*1000
+
+			n.position.z = n.offset.z
 
 			var max_rota_multi = 0.1
 			n.rotation_velocity = new THREE.Vector3
@@ -89,7 +89,7 @@
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
 				camera.position.z = 100;
 
 				scene = new THREE.Scene();
@@ -122,7 +122,7 @@
 				//
 				// evidentmeshclone = new THREE.Mesh( geometry, material )
 
-				for(var i = 0; i < 100; i++){
+				for(var i = 0; i < 303; i++){
 					var n = create_particle()
 					scene.add(n)
 					particles.push(n)
@@ -164,8 +164,9 @@
 
 				// console.log(mouseX)
 
-				camera.position.x += ( mouseX - camera.position.x ) * 0.05;
-				camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+				 camera.position.x += ( mouseX - camera.position.x ) * 0.05;
+				 camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+				camera.position.z = 200.0* Math.cos(time*20.0)
 
 				camera.lookAt( scene.position );
 
