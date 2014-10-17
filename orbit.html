@@ -131,11 +131,11 @@
 				material = new THREE.MeshPhongMaterial(
 					{
 						map: evidentTexture,
-						lightMap: evidentTexture,
+						// lightMap: evidentTexture,
 						// transparent: true,
 						side: THREE.DoubleSide,
 						alphaTest: 0.2,
-						// opacity: 1.0,
+						opacity: 1.0,
 						// color: 0xffffff
 					}
 				);
@@ -148,7 +148,7 @@
 				//
 				// evidentmeshclone = new THREE.Mesh( geometry, material )
 
-				for(var i = 0; i < 1000; i++){
+				for(var i = 0; i < 768; i++){
 					var n = create_particle()
 					scene.add(n)
 					particles.push(n)
@@ -158,15 +158,17 @@
 				attract_points.push(new THREE.Vector3(0,0,0))
 				attract_points.push(new THREE.Vector3(300,0,0))
 
-				attract_points.forEach(function(p){
+				var l0 = new THREE.PointLight(new THREE.Color(1,0,0), 2, 300)
+				l0.position.set(attract_points[0].x,attract_points[0].y,attract_points[0].z)
+				var l1 = new THREE.PointLight(new THREE.Color(1,1,1), 1, 300)
+				l1.position.set(attract_points[1].x,attract_points[1].y,attract_points[1].z)
+				var l2 = new THREE.PointLight(new THREE.Color(0,0,1), 2, 300)
+				l2.position.set(attract_points[2].x,attract_points[2].y,attract_points[2].z)
 
-					var l = new THREE.PointLight(
-						new THREE.Color(Math.random(),Math.random(),Math.random()), 1, 500)
+				scene.add(l0)
+				scene.add(l1)
+				scene.add(l2)
 
-					l.position.set( p.x, p.y, p.z )
-					scene.add(l)
-
-				})
 
 				// scene.add(evidentmeshclone)
 				// scene.add(evidentmesh)
