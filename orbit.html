@@ -39,11 +39,11 @@
 		<script src="libs/stats.min.js"></script> -->
 
 		<script>
+		var particle_creation_index = 0
 		function create_particle(){
 
 			geometry = new THREE.PlaneGeometry(100,100)
 			var n = new THREE.Mesh(geometry, material)
-
 
 			n.velocity = new THREE.Vector3
 
@@ -52,14 +52,14 @@
 			n.offset.y = Math.random()*200 - 100
 			n.offset.z = Math.random()*1000
 
-			n.position.x = Math.random()*100 - 50
-			n.position.y = Math.random()*100 - 50
-			n.position.z = Math.random()*100 - 50
+			n.position.x = 300 * Math.sin(particle_creation_index)
+			n.position.y = 300 * Math.cos(particle_creation_index)
+			n.position.z = 300 * Math.cos(particle_creation_index)
 
-
-			n.velocity.x = Math.random()-0.5
-			n.velocity.y = Math.random()-0.5
-			n.velocity.z = Math.random()-0.5
+			++particle_creation_index
+			// n.velocity.x = Math.random()-0.5
+			// n.velocity.y = Math.random()-0.5
+			// n.velocity.z = Math.random()-0.5
 
 
 			var max_rota_multi = 0.1
@@ -92,6 +92,7 @@
 
 			var evidentTexture, material, evidentmesh, evidentmeshclone
 			particles = []
+			var attract_points = []
 
 			init();
 			animate();
@@ -113,16 +114,29 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 
-				renderer.setClearColorHex( 0xffffff, 1 );
+				renderer.setClearColorHex( 0, 1 );
 
 				evidentTexture = THREE.ImageUtils.loadTexture( "sprite_256.png" );
-				material = new THREE.MeshBasicMaterial(
+				// material = new THREE.MeshBasicMaterial(
+				// 	{
+				// 		map: evidentTexture,
+				// 		transparent: true,
+				// 		side: THREE.DoubleSide,
+				// 		alphaTest: 0.2,
+				// 		opacity: 1.0
+				// 	}
+				// );
+
+
+				material = new THREE.MeshPhongMaterial(
 					{
 						map: evidentTexture,
-						transparent: true,
+						lightMap: evidentTexture,
+						// transparent: true,
 						side: THREE.DoubleSide,
 						alphaTest: 0.2,
-						opacity: 0.8
+						// opacity: 1.0,
+						// color: 0xffffff
 					}
 				);
 
@@ -134,11 +148,25 @@
 				//
 				// evidentmeshclone = new THREE.Mesh( geometry, material )
 
-				for(var i = 0; i < 3000; i++){
+				for(var i = 0; i < 1000; i++){
 					var n = create_particle()
 					scene.add(n)
 					particles.push(n)
 				}
+
+				attract_points.push(new THREE.Vector3(-300,0,0))
+				attract_points.push(new THREE.Vector3(0,0,0))
+				attract_points.push(new THREE.Vector3(300,0,0))
+
+				attract_points.forEach(function(p){
+
+					var l = new THREE.PointLight(
+						new THREE.Color(Math.random(),Math.random(),Math.random()), 1, 500)
+
+					l.position.set( p.x, p.y, p.z )
+					scene.add(l)
+
+				})
 
 				// scene.add(evidentmeshclone)
 				// scene.add(evidentmesh)
@@ -170,44 +198,61 @@
 
 			}
 
+			function attract_to(particle,attract_point){
+
+				var attract_point = attract_point.clone()
+
+				var distance = particle.position.distanceTo(attract_point)
+				var attract_vector_force = new THREE.Vector3(particle.position.x,particle.position.y,particle.position.z)
+				attract_vector_force.sub(attract_point)
+
+				var attract_multi = -1000
+				if(distance < 100){
+					attract_multi = 1000
+				} else {
+
+				}
+
+				attract_vector_force.normalize()
+				attract_vector_force.multiplyScalar((attract_multi)/(distance*distance))
+
+				var this_size = 100
+				attract_vector_force.clampScalar(-this_size,this_size)
+
+				particle.velocity.add(attract_vector_force)
+
+				var random_multi = 0.001
+				particle.velocity.x += Math.random()*random_multi - (0.5*random_multi)
+				particle.velocity.y += Math.random()*random_multi - (0.5*random_multi)
+				particle.velocity.z += Math.random()*random_multi - (0.5*random_multi)
+			}
+
 			function render() {
 
 				var time = Date.now() * 0.00005;
 
 				// console.log(mouseX)
 
-				// camera.position.x += ( mouseX - camera.position.x ) * 0.05;
-				// camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
-				// camera.position.z = 200.0* Math.cos(time*20.0)
+				camera.position.x += Math.sin(time*40)
+				camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+				camera.position.z = 500.0* Math.cos(time*4)
 
 				camera.lookAt( scene.position );
 
 				particles.forEach(function(particle){
 
-					var distance = particle.position.length()
-					var attract_vector_force = particle.position.clone()
+					attract_points.forEach(function(attract_point){
+							attract_to(particle,attract_point)
+					})
 
-					var attract_multi = 1
-					if(distance < 100){
-						attract_multi = -1
-					} else {
 
-					}
-
-					attract_vector_force.normalize()
-					attract_vector_force.multiplyScalar(-(distance*attract_multi)/(distance*distance))
-
-					attract_vector_force.clampScalar(-20,20)
-
-					particle.velocity.add(attract_vector_force)
-
-					particle.velocity.clampScalar(-100,100)
+					//particle.velocity.clampScalar(-100,100)
 
 
 					particle.position.add(particle.velocity)
 
-					// particle.rotation.x += particle.rotation_velocity.x
-					// particle.rotation.y += particle.rotation_velocity.y
+					particle.rotation.x += particle.rotation_velocity.x
+					particle.rotation.y += particle.rotation_velocity.y
 
 					var rotation_radius = 100
 					var time_multi = 10
@@ -220,6 +265,11 @@
 					// if(particle.position.z < -1000){ particle.position.z = particle.offset.z; particle.velocity.z = 0}
 
 				})
+
+				attract_points.forEach(function(p){
+					p.add(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-.5))
+				})
+
 				//
 				//
 				// evidentmesh.rotation.x += 0.03
