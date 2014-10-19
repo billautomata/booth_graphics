@@ -44,6 +44,8 @@
 
 			geometry = new THREE.PlaneGeometry(100,100)
 			var n = new THREE.Mesh(geometry, material)
+			n.receiveShadow = true
+			n.castShadow = true
 
 			n.velocity = new THREE.Vector3
 
@@ -68,7 +70,7 @@
 			n.rotation_velocity.y = max_rota_multi*(Math.random()*2-1)
 			n.rotation_velocity.z = max_rota_multi*(Math.random()*2-1)
 
-			var s = 0.09*Math.random() + 0.1
+			var s = 0.2*Math.random() + 0.1
 			n.scale.x = s
 			n.scale.y = s
 
@@ -94,15 +96,19 @@
 			particles = []
 			var attract_points = []
 
+			var framecount = 0
+
 			init();
 			animate();
+
+			var l0,l1,l2
 
 			function init() {
 
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1500 );
 				camera.position.z = 500;
 
 				scene = new THREE.Scene();
@@ -115,6 +121,21 @@
 				container.appendChild( renderer.domElement );
 
 				renderer.setClearColorHex( 0, 1 );
+
+
+				renderer.shadowMapEnabled = true;
+				renderer.shadowMapSoft = true;
+
+				renderer.shadowMapCascade = true
+
+				renderer.shadowCameraNear = 3;
+				renderer.shadowCameraFar = camera.far;
+				renderer.shadowCameraFov = camera.fov;
+
+				renderer.shadowMapBias = 0.0001;
+				renderer.shadowMapDarkness = 1.0;
+				renderer.shadowMapWidth = 2048;
+				renderer.shadowMapHeight = 2048;
 
 				evidentTexture = THREE.ImageUtils.loadTexture( "sprite_256.png" );
 				// material = new THREE.MeshBasicMaterial(
@@ -154,21 +175,40 @@
 					particles.push(n)
 				}
 
-				attract_points.push(new THREE.Vector3(-300,0,0))
-				attract_points.push(new THREE.Vector3(0,0,0))
-				attract_points.push(new THREE.Vector3(300,0,0))
+				attract_points.push(new THREE.Vector3(-300,200,100))
+				attract_points.push(new THREE.Vector3(0,200,300))
+				attract_points.push(new THREE.Vector3(300,200,0))
 
-				var l0 = new THREE.PointLight(new THREE.Color(1,0,0), 2, 300)
+				l0 = new THREE.SpotLight(new THREE.Color(1,0,0), 1)
 				l0.position.set(attract_points[0].x,attract_points[0].y,attract_points[0].z)
-				var l1 = new THREE.PointLight(new THREE.Color(1,1,1), 1, 300)
+				l1 = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.1)
 				l1.position.set(attract_points[1].x,attract_points[1].y,attract_points[1].z)
-				var l2 = new THREE.PointLight(new THREE.Color(0,0,1), 2, 300)
+				l2 = new THREE.SpotLight(new THREE.Color(0,0,1), 1)
 				l2.position.set(attract_points[2].x,attract_points[2].y,attract_points[2].z)
 
-				scene.add(l0)
-				scene.add(l1)
-				scene.add(l2)
+				//l0.castShadow=true
+				l1.castShadow=true
+				// l2.castShadow=true
 
+				// scene.add(l0)
+				scene.add(l1)
+				// scene.add(l2)
+
+				var floor = new THREE.Mesh(
+					new THREE.PlaneGeometry(1000,1000),
+					new THREE.MeshPhongMaterial({
+						color: 'white',
+						side: THREE.DoubleSide
+					})
+
+				)
+				floor.rotation.x = -Math.PI * 0.5
+
+				floor.receiveShadow = true
+
+				scene.add(new THREE.AmbientLight(0xFFFFFF))
+
+				scene.add(floor)
 
 				// scene.add(evidentmeshclone)
 				// scene.add(evidentmesh)
@@ -235,43 +275,57 @@
 
 				// console.log(mouseX)
 
-				camera.position.x += Math.sin(time*40)
-				camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
-				camera.position.z = 500.0* Math.cos(time*4)
+				// camera.position.x += Math.sin(time*40)
+				// camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+
+				camera.position.x = 400 * Math.sin(time*6)
+				camera.position.z = 400 * Math.cos(time*6)
+
+
+
+				// l1.position.y = 600 + (400*Math.abs(Math.sin(time*10)))
+
+				//camera.position.y = camera.position.x = 300
+
+				camera.position.y = 600.0 + (300*Math.cos(time*10.5))
 
 				camera.lookAt( scene.position );
 
-				particles.forEach(function(particle){
+				if(framecount < 200){
 
-					attract_points.forEach(function(attract_point){
-							attract_to(particle,attract_point)
+					particles.forEach(function(particle){
+
+						attract_points.forEach(function(attract_point){
+								attract_to(particle,attract_point)
+						})
+
+
+						//particle.velocity.clampScalar(-100,100)
+
+
+						particle.position.add(particle.velocity)
+
+						particle.rotation.x += particle.rotation_velocity.x
+						particle.rotation.y += particle.rotation_velocity.y
+
+						var rotation_radius = 100
+						var time_multi = 10
+
+						// particle.velocity.z -= 2.0 *  Math.random()
+						// particle.position.x = particle.offset.x + rotation_radius * Math.cos(time*time_multi)
+						// particle.position.y = particle.offset.y + rotation_radius * Math.sin(time*time_multi)
+						// particle.position.z += particle.velocity.z
+						//
+						// if(particle.position.z < -1000){ particle.position.z = particle.offset.z; particle.velocity.z = 0}
+
 					})
 
-
-					//particle.velocity.clampScalar(-100,100)
-
-
-					particle.position.add(particle.velocity)
-
-					particle.rotation.x += particle.rotation_velocity.x
-					particle.rotation.y += particle.rotation_velocity.y
-
-					var rotation_radius = 100
-					var time_multi = 10
-
-					// particle.velocity.z -= 2.0 *  Math.random()
-					// particle.position.x = particle.offset.x + rotation_radius * Math.cos(time*time_multi)
-					// particle.position.y = particle.offset.y + rotation_radius * Math.sin(time*time_multi)
-					// particle.position.z += particle.velocity.z
-					//
-					// if(particle.position.z < -1000){ particle.position.z = particle.offset.z; particle.velocity.z = 0}
-
-				})
-
-				attract_points.forEach(function(p){
-					p.add(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-.5))
-				})
-
+	// 				attract_points.forEach(function(p){
+	// 					p.add(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-.5))
+	// 				})
+} else if (framecount > 300){
+	framecount = 0
+}
 				//
 				//
 				// evidentmesh.rotation.x += 0.03
@@ -293,6 +347,8 @@
 				//evidentmeshclone.scale.x = 2.5
 
 				renderer.render( scene, camera );
+
+				framecount++
 
 			}
 
