@@ -72,6 +72,9 @@
 			n.scale.x = s
 			n.scale.y = s
 
+			n.castShadow = true
+			n.receiveShadow = true
+
 			// console.log(n.position)
 
 			return n
@@ -113,16 +116,31 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 
-				renderer.setClearColorHex( 0xffffff, 1 );
+				renderer.setClearColorHex( 0x666666, 1 );
+
+				renderer.shadowMapEnabled = true;
+				renderer.shadowMapSoft = true;
+
+				renderer.shadowMapCascade = true
+
+				renderer.shadowCameraNear = 3;
+				renderer.shadowCameraFar = camera.far;
+				renderer.shadowCameraFov = camera.fov;
+
+				renderer.shadowMapBias = 0.0039;
+				renderer.shadowMapDarkness = 1.0;
+				renderer.shadowMapWidth = 2048;
+				renderer.shadowMapHeight = 2048;
 
 				evidentTexture = THREE.ImageUtils.loadTexture( "sprite_256.png" );
-				material = new THREE.MeshBasicMaterial(
+				material = new THREE.MeshPhongMaterial(
 					{
 						map: evidentTexture,
 						transparent: true,
 						side: THREE.DoubleSide,
 						alphaTest: 0.2,
-						opacity: 0.8
+						opacity: 1.0,
+						color: 0xffffff
 					}
 				);
 
@@ -134,7 +152,7 @@
 				//
 				// evidentmeshclone = new THREE.Mesh( geometry, material )
 
-				for(var i = 0; i < 3000; i++){
+				for(var i = 0; i < 1024; i++){
 					var n = create_particle()
 					scene.add(n)
 					particles.push(n)
@@ -143,6 +161,19 @@
 				// scene.add(evidentmeshclone)
 				// scene.add(evidentmesh)
 
+				var l = new THREE.SpotLight(0xffffff,1.0)
+				l.position.set(200,300,600)
+			l.shadowMapWidth = 1024;
+			l.shadowMapHeight = 1024;
+
+			l.shadowCameraNear = 5;
+			l.shadowCameraFar = 1000;
+			l.shadowCameraFov = 90;
+				l.lookAt(0,0,0)
+				l.castShadow = true
+				scene.add(l)
+
+				scene.add(new THREE.AmbientLight(0x111111))
 
 				// stats = new Stats();
 				// stats.domElement.style.position = 'absolute';
@@ -187,11 +218,11 @@
 					var distance = particle.position.length()
 					var attract_vector_force = particle.position.clone()
 
-					var attract_multi = 1
+					var attract_multi = 0.3
 					if(distance < 100){
-						attract_multi = -1
-					} else {
-
+						attract_multi = -4
+					} else if(distance > 200) {
+						attract_multi = 12
 					}
 
 					attract_vector_force.normalize()
@@ -202,7 +233,6 @@
 					particle.velocity.add(attract_vector_force)
 
 					particle.velocity.clampScalar(-100,100)
-
 
 					particle.position.add(particle.velocity)
 
