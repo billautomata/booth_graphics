@@ -33,12 +33,26 @@
 	<body>
 
 		<script src="three.js"></script>
+		<script src="js/shaders/ConvolutionShader.js"></script>
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/DotScreenShader.js"></script>
+		<script src="js/shaders/FilmShader.js"></script>
+		<script src="js/shaders/RGBShiftShader.js"></script>
+		<script src="js/shaders/BasicShader.js"></script>
 
+		<script src="js/postprocessing/BloomPass.js"></script>
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+
+		<script src="js/postprocessing/FilmPass.js"></script>
 		<script src="Detector.js"></script>
 		<!--
 		<script src="libs/stats.min.js"></script> -->
 
 		<script>
+		var particle_creation_index = 0
 		function create_particle(){
 
 			geometry = new THREE.PlaneGeometry(100,100)
@@ -48,28 +62,31 @@
 			var max_mass = 20
 			n.mass = Math.random() * (max_mass-1) + 1
 
+			// n.mass = max_mass
+
 			n.velocity = new THREE.Vector3
 
-			n.offset = new THREE.Vector3
-			n.offset.x = Math.random()*200 - 100
-			n.offset.y = Math.random()*200 - 100
-			n.offset.z = Math.random()*1000
+			// n.offset = new THREE.Vector3
+			// n.offset.x = Math.random()*200 - 100
+			// n.offset.y = Math.random()*200 - 100
+			// n.offset.z = Math.random()*1000
 
-			n.position.x = Math.random()*100 - 50
-			n.position.y = Math.random()*100 - 50
-			n.position.z = Math.random()*100 - 50
-
-
+			// n.position.x = Math.cos(particle_creation_index/80.0) * 300
+			// n.position.y = Math.sin(particle_creation_index/80.0) * 300
+			// n.position.z = Math.random() * 100
+			//
+n.position.x = Math.random()*100 - 50
+n.position.y = Math.random()*100 - 50
+n.position.z = Math.random()*100 - 50
 			// n.velocity.x = Math.random()-0.5
 			// n.velocity.y = Math.random()-0.5
 			// n.velocity.z = Math.random()-0.5
 
-
-			var max_rota_multi = 0.1
-			n.rotation_velocity = new THREE.Vector3
-			n.rotation_velocity.x = max_rota_multi*(Math.random()*2-1)
-			n.rotation_velocity.y = max_rota_multi*(Math.random()*2-1)
-			n.rotation_velocity.z = max_rota_multi*(Math.random()*2-1)
+			// var max_rota_multi = 0.1
+			// n.rotation_velocity = new THREE.Vector3
+			// n.rotation_velocity.x = max_rota_multi*(Math.random()*2-1)
+			// n.rotation_velocity.y = max_rota_multi*(Math.random()*2-1)
+			// n.rotation_velocity.z = max_rota_multi*(Math.random()*2-1)
 
 			var s = n.mass / (max_mass*5)
 			n.scale.x = s
@@ -78,7 +95,7 @@
 			n.castShadow = true
 			n.receiveShadow = true
 
-			// console.log(n.position)
+			particle_creation_index++
 
 			return n
 		}
@@ -92,11 +109,14 @@
 			var camera, scene, renderer, particles, geometry, materials = [], parameters, i, h, color, sprite, size;
 			var mouseX = 0, mouseY = 0;
 
+			var composer
+
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
 
 
 			var evidentTexture, material, evidentmesh, evidentmeshclone
+			var secondlight
 			particles = []
 
 			init();
@@ -130,7 +150,7 @@
 				renderer.shadowCameraFar = camera.far;
 				renderer.shadowCameraFov = camera.fov;
 
-				renderer.shadowMapBias = 0.0039;
+				renderer.shadowMapBias = 0.00013;
 				renderer.shadowMapDarkness = 1.0;
 				renderer.shadowMapWidth = 2048;
 				renderer.shadowMapHeight = 2048;
@@ -166,22 +186,52 @@
 
 				var l = new THREE.SpotLight(0xffffff,1.0)
 				l.position.set(200,300,600)
-			l.shadowMapWidth = 1024;
-			l.shadowMapHeight = 1024;
-
-			l.shadowCameraNear = 5;
-			l.shadowCameraFar = 1000;
-			l.shadowCameraFov = 90;
+				l.shadowMapWidth = 2048;
+				l.shadowMapHeight = 2048;
+				l.shadowCameraNear = 5;
+				l.shadowCameraFar = 1000;
+				l.shadowCameraFov = 90;
 				l.lookAt(0,0,0)
 				l.castShadow = true
 				scene.add(l)
 
-				scene.add(new THREE.AmbientLight(0x111111))
 
-				// stats = new Stats();
-				// stats.domElement.style.position = 'absolute';
-				// stats.domElement.style.top = '0px';
-				// container.appendChild( stats.domElement );
+				secondlight = new THREE.SpotLight(0xffffff,0.33)
+				secondlight.position.set(200,300,-600)
+				secondlight.shadowMapWidth = 2048;
+				secondlight.shadowMapHeight = 2048;
+				secondlight.shadowCameraNear = 5;
+				secondlight.shadowCameraFar = 1000;
+				secondlight.shadowCameraFov = 90;
+				secondlight.lookAt(0,0,0)
+				secondlight.castShadow = true
+				scene.add(secondlight)
+
+				scene.add(new THREE.AmbientLight(0x333333))
+
+				// var renderModel = new THREE.RenderPass( scene, camera );
+				// // var effectBloom = new THREE.BloomPass( 1.0 );
+				// var effectFilm = new THREE.FilmPass( 1, 1, 2048, false );
+				//
+				// effectFilm.renderToScreen = true;
+
+				// composer = new THREE.EffectComposer( renderer );
+
+				// composer.addPass( renderModel );
+				//composer.addPass( effectBloom );
+				// composer.addPass( effectFilm );
+				//
+				// var effect = new THREE.ShaderPass( THREE.RGBShiftShader );
+				// effect.uniforms[ 'amount' ].value = 0.015;
+				// effect.renderToScreen = true;
+				// composer.addPass( effect );
+
+
+				var effect = new THREE.ShaderPass( THREE.BasicShader );
+				// effect.uniforms[ 'scale' ].value = 4;
+				// composer.addPass( effect );
+
+				// composer.addPass(renderModel)
 
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
@@ -199,22 +249,31 @@
 
 				requestAnimationFrame( animate );
 
-				render();
+				tick()
+				//composer.render();
+				renderer.render( scene, camera );
 				// stats.update();
 
 			}
 
-			function render() {
+			function tick() {
 
 				var time = Date.now() * 0.00005;
 
-				// console.log(mouseX)
+				camera.position.x += ( mouseX - camera.position.x ) * 0.05;
+				camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
+				camera.position.z = (Math.cos(time*5) * 400)
 
-				// camera.position.x += ( mouseX - camera.position.x ) * 0.05;
-				// camera.position.y += ( - mouseY - camera.position.y ) * 0.05;
-				// camera.position.z = 200.0* Math.cos(time*20.0)
+				secondlight.position.x = camera.position.x
+				secondlight.position.y = camera.position.y
+				secondlight.position.z = camera.position.z
+				//secondlight.shadowCameraVisible = true;
+				secondlight.lookAt(scene.position)
 
-				camera.lookAt( scene.position );
+
+				camera.lookAt(scene.position)
+
+				// camera.lookAt( new THREE.Vector3(10,10, 300*Math.cos(time*20)) );
 
 				particles.forEach(function(particle){
 
@@ -224,59 +283,37 @@
 					var attract_multi = 0.3
 					if(distance < 100){
 						attract_multi = -4
-					} else if(distance > 200) {
+					} else if(distance >= 200) {
 						attract_multi = 12
 					}
 
+					particle.lookAt(camera.position)
+
 					attract_vector_force.normalize()
-					attract_vector_force.multiplyScalar(-(particle.mass*attract_multi)/(distance*distance))
+
+					attract_vector_force.multiplyScalar(-(distance*attract_multi)/(distance*distance))
 
 					attract_vector_force.clampScalar(-20,20)
 
 					particle.velocity.add(attract_vector_force)
 
-					var random_multi = 0.03
+					var random_multi = 0.01
 					particle.velocity.add(new THREE.Vector3(Math.random()*random_multi-(random_multi*0.5),Math.random()*random_multi-(random_multi*0.5),Math.random()*random_multi-(random_multi*0.5)))
 
 					particle.velocity.clampScalar(-20,20)
 
 					particle.position.add(particle.velocity)
 
-					// particle.rotation.x += particle.rotation_velocity.x
-					// particle.rotation.y += particle.rotation_velocity.y
-
 					var rotation_radius = 100
 					var time_multi = 10
 
-					// particle.velocity.z -= 2.0 *  Math.random()
-					// particle.position.x = particle.offset.x + rotation_radius * Math.cos(time*time_multi)
-					// particle.position.y = particle.offset.y + rotation_radius * Math.sin(time*time_multi)
-					// particle.position.z += particle.velocity.z
-					//
-					// if(particle.position.z < -1000){ particle.position.z = particle.offset.z; particle.velocity.z = 0}
-
 				})
-				//
-				//
-				// evidentmesh.rotation.x += 0.03
-				// evidentmesh.rotation.y += 0.06
-				//
-				// evidentmesh.velocity.z -= 0.1
-				//
-				// var time = Date.now() * 0.001
-				// evidentmesh.position.x = 60.0 * Math.cos(time)
-				// evidentmesh.position.y = 60.0 * Math.sin(time)
-				// evidentmesh.position.z += evidentmesh.velocity.z
-				//
-				// evidentmeshclone.rotation.x -= 0.01
-				// evidentmeshclone.rotation.y -= 0.1
-				//
-				// evidentmeshclone.scale.x = Math.cos(Date.now()*0.000005)
-				// evidentmeshclone.scale.y = Math.sin(Date.now()*0.000001+1)
 
-				//evidentmeshclone.scale.x = 2.5
 
-				renderer.render( scene, camera );
+				// renderer.render(scene,camera)
+				// composer.render()
+
+				// renderer.render( scene, camera );
 
 			}
 
