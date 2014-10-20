@@ -232,7 +232,10 @@
 
 					particle.velocity.add(attract_vector_force)
 
-					particle.velocity.clampScalar(-100,100)
+					var random_multi = 0.03
+					particle.velocity.add(new THREE.Vector3(Math.random()*random_multi-(random_multi*0.5),Math.random()*random_multi-(random_multi*0.5),Math.random()*random_multi-(random_multi*0.5)))
+
+					particle.velocity.clampScalar(-20,20)
 
 					particle.position.add(particle.velocity)
 
